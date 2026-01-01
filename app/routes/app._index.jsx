@@ -5,9 +5,31 @@ import { boundary } from "@shopify/shopify-app-react-router/server";
 import { authenticate } from "../shopify.server";
 
 export const loader = async ({ request }) => {
-  await authenticate.admin(request);
-
-  return null;
+  const { admin } = await authenticate.admin(request);
+  const response = await admin.graphql(
+    `#graphql
+  mutation {
+  discountAutomaticAppCreate(
+    automaticAppDiscount: {
+      title: "Cart Lines Discount Function"
+      functionHandle: "discount-function"
+      discountClasses: [PRODUCT, ORDER, SHIPPING]
+      startsAt: "2026-01-01T00:00:00"
+    }
+  ) {
+    automaticAppDiscount {
+      discountId
+    }
+    userErrors {
+      field
+      message
+    }
+  }
+}
+`
+  );
+  const json = await response.json();
+  return json.data;
 };
 
 export const action = async ({ request }) => {

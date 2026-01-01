@@ -17,7 +17,7 @@ import {
 
 export function cartLinesDiscountsGenerateRun(input) {
   if (!input.cart.lines.length) {
-    return {operations: []};
+    return { operations: [] };
   }
 
   const hasOrderDiscountClass = input.discount.discountClasses.includes(
@@ -28,24 +28,19 @@ export function cartLinesDiscountsGenerateRun(input) {
   );
 
   if (!hasOrderDiscountClass && !hasProductDiscountClass) {
-    return {operations: []};
+    return { operations: [] };
   }
 
-  const maxCartLine = input.cart.lines.reduce((maxLine, line) => {
-    if (line.cost.subtotalAmount.amount > maxLine.cost.subtotalAmount.amount) {
-      return line;
-    }
-    return maxLine;
-  }, input.cart.lines[0]);
-
+  /** @type {CartLinesDiscountsGenerateRunResult["operations"]} */
   const operations = [];
+
 
   if (hasOrderDiscountClass) {
     operations.push({
       orderDiscountsAdd: {
         candidates: [
           {
-            message: '10% OFF ORDER',
+            message: "10% OFF ORDER",
             targets: [
               {
                 orderSubtotal: {
@@ -65,32 +60,61 @@ export function cartLinesDiscountsGenerateRun(input) {
     });
   }
 
+
   if (hasProductDiscountClass) {
-    operations.push({
-      productDiscountsAdd: {
-        candidates: [
+
+    const productCandidates = [];
+
+    for (const line of input.cart.lines) {
+      const discountPercentage = getDiscountPercentageForQuantity(line.quantity);
+
+      if (!discountPercentage) {
+        continue;
+      }
+
+      productCandidates.push({
+        message: `${discountPercentage}% OFF PRODUCT`,
+        targets: [
           {
-            message: '20% OFF PRODUCT',
-            targets: [
-              {
-                cartLine: {
-                  id: maxCartLine.id,
-                },
-              },
-            ],
-            value: {
-              percentage: {
-                value: 20,
-              },
+            cartLine: {
+              id: line.id,
             },
           },
         ],
-        selectionStrategy: ProductDiscountSelectionStrategy.First,
-      },
-    });
+        value: {
+          percentage: {
+            value: discountPercentage,
+          },
+        },
+      });
+    }
+
+    if (productCandidates.length > 0) {
+      operations.push({
+        productDiscountsAdd: {
+          candidates: productCandidates,
+          selectionStrategy: ProductDiscountSelectionStrategy.First,
+        },
+      });
+    }
   }
 
   return {
     operations,
   };
+}
+
+
+function getDiscountPercentageForQuantity(quantity) {
+  if (quantity === 4) {
+    return 20;
+  }
+  if (quantity === 6) {
+    return 30;
+  }
+  if (quantity === 8) {
+    return 40;
+  }
+
+  return null;
 }
