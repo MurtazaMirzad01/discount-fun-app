@@ -14,40 +14,54 @@ import {
   */
 
 export function cartDeliveryOptionsDiscountsGenerateRun(input) {
-  const firstDeliveryGroup = input.cart.deliveryGroups[0];
-  if (!firstDeliveryGroup) {
-    return {operations: []};
+  const groups = input.cart.deliveryGroups;
+  if (!groups || groups.length === 0) {
+    return { operations: [] };
   }
 
+  // Check if shipping discount is allowed
   const hasShippingDiscountClass = input.discount.discountClasses.includes(
-    DiscountClass.Shipping,
+    DiscountClass.Shipping
   );
 
   if (!hasShippingDiscountClass) {
-    return {operations: []};
+    return { operations: [] };
+  }
+
+  const candidates = [];
+
+  for (const group of groups) {
+    if (!group.deliveryAddress || !group.deliveryAddress.countryCode) continue;
+
+    const countryCode = group.deliveryAddress.countryCode;
+
+    let discountValue;
+    let message;
+
+    if (countryCode === "US") {
+      discountValue = 100; // free shipping
+      message = "FREE shipping (US)";
+    } else {
+      discountValue = 50; // 50% discount
+      message = "50% shipping discount";
+    }
+
+    candidates.push({
+      message,
+      targets: [{ deliveryGroup: { id: group.id } }],
+      value: { percentage: { value: discountValue } },
+    });
+  }
+
+  if (candidates.length === 0) {
+    return { operations: [] };
   }
 
   return {
     operations: [
       {
         deliveryDiscountsAdd: {
-          candidates: [
-            {
-              message: "FREE DELIVERY",
-              targets: [
-                {
-                  deliveryGroup: {
-                    id: firstDeliveryGroup.id,
-                  },
-                },
-              ],
-              value: {
-                percentage: {
-                  value: 100,
-                },
-              },
-            },
-          ],
+          candidates,
           selectionStrategy: DeliveryDiscountSelectionStrategy.All,
         },
       },
