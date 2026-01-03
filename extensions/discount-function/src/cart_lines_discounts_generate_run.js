@@ -106,13 +106,13 @@ export function cartLinesDiscountsGenerateRun(input) {
 
 
 function getDiscountPercentageForQuantity(quantity) {
-  if (quantity === 4) {
+  if (quantity === 3) {
     return 20;
   }
-  if (quantity === 6) {
+  if (quantity === 5) {
     return 30;
   }
-  if (quantity === 8) {
+  if (quantity === 7) {
     return 40;
   }
 
