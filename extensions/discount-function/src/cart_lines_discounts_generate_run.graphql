@@ -2,16 +2,13 @@ query CartInput {
   cart {
     lines {
       id
-      quantity 
+      quantity
       merchandise {
         __typename
         ... on ProductVariant {
           id
-          title
           product {
-            id
-            title
-            hasAnyTag(tags: ["VIP", "Sale"])
+            isGiftCard
           }
         }
       }

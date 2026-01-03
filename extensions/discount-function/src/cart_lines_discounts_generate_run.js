@@ -4,7 +4,6 @@ import {
   ProductDiscountSelectionStrategy,
 } from '../generated/api';
 
-
 /**
   * @typedef {import("../generated/api").CartInput} RunInput
   * @typedef {import("../generated/api").CartLinesDiscountsGenerateRunResult} CartLinesDiscountsGenerateRunResult
@@ -36,6 +35,14 @@ export function cartLinesDiscountsGenerateRun(input) {
 
 
   if (hasOrderDiscountClass) {
+    const giftCardLineIds = input.cart.lines
+      .filter(
+        line =>
+          line.merchandise.__typename === "ProductVariant" &&
+          line.merchandise.product.isGiftCard
+      )
+      .map(line => line.id);
+
     operations.push({
       orderDiscountsAdd: {
         candidates: [
@@ -44,58 +51,55 @@ export function cartLinesDiscountsGenerateRun(input) {
             targets: [
               {
                 orderSubtotal: {
-                  excludedCartLineIds: [],
+                  excludedCartLineIds: giftCardLineIds,
                 },
               },
             ],
             value: {
-              percentage: {
-                value: 10,
-              },
+              percentage: { value: 10 },
             },
           },
         ],
         selectionStrategy: OrderDiscountSelectionStrategy.First,
       },
     });
+
   }
 
-
   if (hasProductDiscountClass) {
-
     const productCandidates = [];
 
     for (const line of input.cart.lines) {
-      const discountPercentage = getDiscountPercentageForQuantity(line.quantity);
-
-      if (!discountPercentage) {
-        continue;
+      if (
+        line.merchandise.__typename !== "ProductVariant" ||
+        line.merchandise.product.isGiftCard
+      ) {
+        continue; // Skip gift cards
       }
 
-      productCandidates.push({
-        message: `${discountPercentage}% OFF PRODUCT`,
-        targets: [
-          {
-            cartLine: {
-              id: line.id,
-            },
+      const discountPercentage =
+        getDiscountPercentageForQuantity(line.quantity);
+
+      if (!discountPercentage) continue;
+
+      productCandidates.push(
+        {
+          message: `${discountPercentage}% OFF PRODUCT`,
+          targets: [{ cartLine: { id: line.id } }],
+          value: {
+            percentage: { value: discountPercentage },
           },
-        ],
-        value: {
-          percentage: {
-            value: discountPercentage,
-          },
-        },
-      });
+        });
     }
 
     if (productCandidates.length > 0) {
-      operations.push({
-        productDiscountsAdd: {
-          candidates: productCandidates,
-          selectionStrategy: ProductDiscountSelectionStrategy.First,
-        },
-      });
+      operations.push(
+        {
+          productDiscountsAdd: {
+            candidates: productCandidates,
+            selectionStrategy: ProductDiscountSelectionStrategy.All,
+          },
+        });
     }
   }
 

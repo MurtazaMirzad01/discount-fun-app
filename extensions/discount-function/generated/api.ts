@@ -3077,4 +3077,4 @@ export type DeliveryInput = { __typename?: 'Input', cart: { __typename?: 'Cart',
 export type CartInputVariables = Exact<{ [key: string]: never; }>;
 
 
-export type CartInput = { __typename?: 'Input', cart: { __typename?: 'Cart', lines: Array<{ __typename?: 'CartLine', id: string, quantity: number, merchandise: { __typename: 'CustomProduct' } | { __typename: 'ProductVariant', id: string, title?: string | null, product: { __typename?: 'Product', id: string, title: string, hasAnyTag: boolean } } }> }, discount: { __typename?: 'Discount', discountClasses: Array<DiscountClass> } };
+export type CartInput = { __typename?: 'Input', cart: { __typename?: 'Cart', lines: Array<{ __typename?: 'CartLine', id: string, quantity: number, merchandise: { __typename: 'CustomProduct' } | { __typename: 'ProductVariant', id: string, product: { __typename?: 'Product', isGiftCard: boolean } } }> }, discount: { __typename?: 'Discount', discountClasses: Array<DiscountClass> } };
